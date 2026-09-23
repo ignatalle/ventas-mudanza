@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ventas Mudanza</title>
+  <style>
+    :root {
+      --bg: #f0f4f8;
+      --card: #ffffff;
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --danger: #ef4444;
+      --danger-hover: #dc2626;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --text: #1e293b;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --input-bg: #f8fafc;
+      --overlay: rgba(0,0,0,0.5);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --bg: #0f172a; --card: #1e293b; --text: #f1f5f9;
+        --text-muted: #94a3b8; --border: #334155; --input-bg: #0f172a;
+        --overlay: rgba(0,0,0,0.75);
+      }
+    }
+    :root[data-theme="dark"] {
+      --bg: #0f172a; --card: #1e293b; --text: #f1f5f9;
+      --text-muted: #94a3b8; --border: #334155; --input-bg: #0f172a;
+      --overlay: rgba(0,0,0,0.75);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      font-size: 16px;
+      line-height: 1.5;
+    }
+
+    /* CONFIG SCREEN */
+    #config-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 16px;
+    }
+    .config-card {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 28px 20px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.1);
+    }
+    .config-card h1 { font-size: 1.5rem; font-weight: 700; text-align: center; margin-bottom: 6px; }
+    .config-card .subtitle { color: var(--text-muted); font-size: 0.875rem; text-align: center; margin-bottom: 24px; }
+
+    /* APP */
+    #app { display: none; max-width: 600px; margin: 0 auto; padding: 16px 16px 90px; }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    header h1 { font-size: 1.2rem; font-weight: 700; }
+    .btn-icon {
+      background: none; border: none; cursor: pointer;
+      padding: 8px; border-radius: 8px; color: var(--text-muted); font-size: 1.2rem;
+    }
+    .btn-icon:hover { background: var(--border); }
+
+    /* SUMMARY */
+    .summary { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+    .summary-tile {
+      background: var(--card); border-radius: 12px; padding: 12px 8px;
+      text-align: center; box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+    }
+    .summary-tile .val { font-size: 1rem; font-weight: 700; color: var(--primary); }
+    .summary-tile .lbl { font-size: 0.68rem; color: var(--text-muted); margin-top: 2px; text-transform: uppercase; letter-spacing: .3px; }
+    .summary-tile.pend .val { color: var(--warning); }
+    .summary-tile.cnt .val { color: var(--text); }
+
+    /* VENTA CARD */
+    .venta-card {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 10px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+    }
+    .venta-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+    .venta-info { flex: 1; min-width: 0; }
+    .venta-nombre { font-weight: 600; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .venta-comprador { font-size: 0.8rem; color: var(--text-muted); margin-top: 2px; }
+    .venta-right { text-align: right; flex-shrink: 0; }
+    .venta-precio { font-weight: 700; font-size: 1rem; color: var(--primary); }
+    .venta-fecha { font-size: 0.72rem; color: var(--text-muted); margin-top: 2px; }
+
+    .cuotas-row {
+      display: flex; align-items: center; gap: 8px; margin-top: 10px;
+      background: var(--bg); border-radius: 8px; padding: 8px 10px;
+    }
+    .cuotas-info { flex: 1; font-size: 0.8rem; color: var(--text-muted); }
+    .cuotas-label { font-weight: 600; color: var(--text); font-size: 0.85rem; }
+    .progress-bar {
+      height: 5px; background: var(--border); border-radius: 3px; margin-top: 4px; overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%; background: var(--success); border-radius: 3px; transition: width 0.3s;
+    }
+
+    .badge {
+      display: inline-block; padding: 2px 8px; border-radius: 99px;
+      font-size: 0.7rem; font-weight: 600; white-space: nowrap;
+    }
+    .badge-cuotas { background: #dbeafe; color: #1d4ed8; }
+    .badge-ok { background: #dcfce7; color: #15803d; }
+    @media (prefers-color-scheme: dark) {
+      .badge-cuotas { background: #1e3a5f; color: #93c5fd; }
+      .badge-ok { background: #14532d; color: #86efac; }
+    }
+
+    .venta-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px; }
+
+    /* BUTTONS */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 4px;
+      border: none; border-radius: 8px; cursor: pointer;
+      font-size: 0.875rem; font-weight: 500; padding: 9px 16px;
+      transition: opacity .15s, transform .1s;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn:disabled { opacity: .6; cursor: default; }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover:not(:disabled) { background: var(--primary-hover); }
+    .btn-danger { background: var(--danger); color: #fff; }
+    .btn-danger:hover:not(:disabled) { background: var(--danger-hover); }
+    .btn-success { background: var(--success); color: #fff; }
+    .btn-outline { background: transparent; border: 1.5px solid var(--border); color: var(--text); }
+    .btn-outline:hover:not(:disabled) { background: var(--border); }
+    .btn-sm { padding: 5px 11px; font-size: 0.78rem; border-radius: 6px; }
+    .btn-block { width: 100%; padding: 12px; }
+
+    /* FAB */
+    .fab {
+      position: fixed; bottom: 20px; right: 20px;
+      width: 56px; height: 56px; border-radius: 50%;
+      background: var(--primary); color: #fff; border: none;
+      font-size: 1.75rem; cursor: pointer;
+      box-shadow: 0 4px 16px rgba(59,130,246,.4);
+      display: flex; align-items: center; justify-content: center;
+      transition: transform .15s, box-shadow .15s;
+      line-height: 1;
+    }
+    .fab:hover { transform: scale(1.06); box-shadow: 0 6px 22px rgba(59,130,246,.5); }
+
+    /* MODAL */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: var(--overlay); z-index: 100;
+      align-items: flex-end; justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+    @media (min-width: 500px) { .modal-overlay { align-items: center; } }
+    .modal {
+      background: var(--card);
+      border-radius: 20px 20px 0 0;
+      padding: 20px 16px 28px;
+      width: 100%; max-width: 480px;
+      max-height: 92vh; overflow-y: auto;
+    }
+    @media (min-width: 500px) { .modal { border-radius: 16px; padding: 24px; } }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+    .modal-header h2 { font-size: 1.1rem; font-weight: 700; }
+    .modal-close { background: none; border: none; font-size: 1.4rem; cursor: pointer; color: var(--text-muted); border-radius: 6px; padding: 4px 6px; }
+    .modal-close:hover { background: var(--border); }
+
+    /* FORM */
+    .form-group { margin-bottom: 14px; }
+    label { display: block; font-size: 0.85rem; font-weight: 500; margin-bottom: 5px; }
+    input[type="text"], input[type="number"], input[type="url"], input[type="date"], input[type="password"] {
+      width: 100%; padding: 10px 12px; border: 1.5px solid var(--border);
+      border-radius: 8px; background: var(--input-bg); color: var(--text);
+      font-size: 1rem; transition: border-color .15s; -webkit-appearance: none;
+    }
+    input:focus { outline: none; border-color: var(--primary); }
+    input::placeholder { color: var(--text-muted); }
+
+    .toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; }
+    .toggle-row span { font-size: 0.9rem; font-weight: 500; }
+    .toggle { position: relative; width: 44px; height: 24px; }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider {
+      position: absolute; inset: 0; background: var(--border);
+      border-radius: 24px; cursor: pointer; transition: background .2s;
+    }
+    .toggle-slider::before {
+      content: ''; position: absolute; width: 18px; height: 18px;
+      border-radius: 50%; background: #fff; top: 3px; left: 3px; transition: transform .2s;
+    }
+    .toggle input:checked + .toggle-slider { background: var(--primary); }
+    .toggle input:checked + .toggle-slider::before { transform: translateX(20px); }
+
+    #cuotas-fields { display: none; }
+    #cuotas-fields.show { display: block; }
+
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .form-actions { display: flex; gap: 10px; margin-top: 20px; }
+    .form-actions .btn { flex: 1; padding: 12px; }
+
+    /* EMPTY */
+    .empty { text-align: center; padding: 48px 16px; color: var(--text-muted); }
+    .empty .icon { font-size: 3rem; margin-bottom: 12px; }
+    .empty p { font-size: 0.9rem; }
+
+    /* LOADING */
+    .loading { display: flex; justify-content: center; padding: 48px; }
+    .spinner {
+      width: 32px; height: 32px; border: 3px solid var(--border);
+      border-top-color: var(--primary); border-radius: 50%;
+      animation: spin .8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* CONFIRM */
+    .confirm-overlay {
+      display: none; position: fixed; inset: 0;
+      background: var(--overlay); z-index: 200;
+      align-items: center; justify-content: center; padding: 16px;
+    }
+    .confirm-overlay.open { display: flex; }
+    .confirm-dialog {
+      background: var(--card); border-radius: 16px; padding: 24px;
+      width: 100%; max-width: 320px; text-align: center;
+    }
+    .confirm-dialog h3 { font-size: 1rem; margin-bottom: 8px; }
+    .confirm-dialog p { font-size: 0.875rem; color: var(--text-muted); margin-bottom: 20px; }
+    .confirm-btns { display: flex; gap: 10px; }
+    .confirm-btns .btn { flex: 1; }
+
+    /* TOAST */
+    .toast {
+      position: fixed; bottom: 88px; left: 50%;
+      transform: translateX(-50%) translateY(12px);
+      background: #1e293b; color: #fff; padding: 9px 20px;
+      border-radius: 99px; font-size: 0.875rem;
+      opacity: 0; transition: all .25s ease; z-index: 300;
+      pointer-events: none; white-space: nowrap;
+      max-width: calc(100vw - 32px); overflow: hidden; text-overflow: ellipsis;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    .error-msg { color: var(--danger); font-size: 0.8rem; margin-top: 8px; text-align: center; }
+  </style>
+</head>
+<body>
+
+<!-- CONFIG SCREEN -->
+<div id="config-screen">
+  <div class="config-card">
+    <h1>📦 Ventas Mudanza</h1>
+    <p class="subtitle">Ingresá las credenciales de tu proyecto Supabase para comenzar. Se guardan localmente en tu dispositivo.</p>
+    <div class="form-group">
+      <label for="cfg-url">Supabase URL</label>
+      <input type="url" id="cfg-url" placeholder="https://xxxx.supabase.co" autocomplete="off">
+    </div>
+    <div class="form-group">
+      <label for="cfg-key">Anon / Public Key</label>
+      <input type="password" id="cfg-key" placeholder="eyJhbGci...">
+    </div>
+    <button class="btn btn-primary btn-block" id="cfg-save">Conectar</button>
+    <p class="error-msg" id="cfg-error"></p>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app">
+  <header>
+    <h1>📦 Ventas Mudanza</h1>
+    <button class="btn-icon" id="btn-settings" title="Cambiar credenciales">⚙️</button>
+  </header>
+
+  <div class="summary">
+    <div class="summary-tile">
+      <div class="val" id="sum-cobrado">$0</div>
+      <div class="lbl">Cobrado</div>
+    </div>
+    <div class="summary-tile pend">
+      <div class="val" id="sum-pendiente">$0</div>
+      <div class="lbl">Pendiente</div>
+    </div>
+    <div class="summary-tile cnt">
+      <div class="val" id="sum-items">0</div>
+      <div class="lbl">Artículos</div>
+    </div>
+  </div>
+
+  <div id="ventas-list"></div>
+
+  <button class="fab" id="btn-add" title="Nueva venta">+</button>
+</div>
+
+<!-- ADD/EDIT MODAL -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal" role="dialog" aria-modal="true">
+    <div class="modal-header">
+      <h2 id="modal-title">Nueva venta</h2>
+      <button class="modal-close" id="modal-close" aria-label="Cerrar">✕</button>
+    </div>
+
+    <div class="form-group">
+      <label for="f-nombre">Artículo *</label>
+      <input type="text" id="f-nombre" placeholder="Ej: Mesa de madera" maxlength="120">
+    </div>
+    <div class="form-group">
+      <label for="f-comprador">Comprador</label>
+      <input type="text" id="f-comprador" placeholder="Ej: Juan Pérez" maxlength="100">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label for="f-precio">Precio total * ($)</label>
+        <input type="number" id="f-precio" placeholder="0" min="0" step="0.01">
+      </div>
+      <div class="form-group">
+        <label for="f-fecha">Fecha</label>
+        <input type="date" id="f-fecha">
+      </div>
+    </div>
+
+    <div class="toggle-row">
+      <span>¿En cuotas?</span>
+      <label class="toggle">
+        <input type="checkbox" id="f-es-cuotas">
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+
+    <div id="cuotas-fields">
+      <div class="form-row" style="margin-top:10px;">
+        <div class="form-group">
+          <label for="f-num-cuotas">Cant. de cuotas</label>
+          <input type="number" id="f-num-cuotas" placeholder="3" min="1" step="1">
+        </div>
+        <div class="form-group">
+          <label for="f-cuotas-cobradas">Cuotas cobradas</label>
+          <input type="number" id="f-cuotas-cobradas" placeholder="0" min="0" step="1">
+        </div>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button class="btn btn-outline" id="btn-cancel">Cancelar</button>
+      <button class="btn btn-primary" id="btn-save">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM DELETE -->
+<div class="confirm-overlay" id="confirm-overlay">
+  <div class="confirm-dialog">
+    <h3>¿Eliminar venta?</h3>
+    <p id="confirm-text">Esta acción no se puede deshacer.</p>
+    <div class="confirm-btns">
+      <button class="btn btn-outline" id="confirm-cancel">Cancelar</button>
+      <button class="btn btn-danger" id="confirm-ok">Eliminar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script type="module">
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+
+let supabase = null;
+let ventas = [];
+let editingId = null;
+let pendingDelete = null;
+
+const $ = id => document.getElementById(id);
+const configScreen = $('config-screen');
+const appEl = $('app');
+const ventasList = $('ventas-list');
+const modalOverlay = $('modal-overlay');
+const confirmOverlay = $('confirm-overlay');
+const toastEl = $('toast');
+
+// ── INIT ──────────────────────────────────────────────
+function init() {
+  const url = localStorage.getItem('sb_url');
+  const key = localStorage.getItem('sb_key');
+  if (url && key) {
+    supabase = createClient(url, key);
+    showApp();
+    loadVentas();
+  } else {
+    showConfig();
+  }
+}
+
+function showConfig() {
+  configScreen.style.display = 'flex';
+  appEl.style.display = 'none';
+}
+
+function showApp() {
+  configScreen.style.display = 'none';
+  appEl.style.display = 'block';
+}
+
+// ── CONFIG ────────────────────────────────────────────
+$('cfg-save').addEventListener('click', async () => {
+  const url = $('cfg-url').value.trim();
+  const key = $('cfg-key').value.trim();
+  const errEl = $('cfg-error');
+  errEl.textContent = '';
+
+  if (!url || !key) { errEl.textContent = 'Completá los dos campos.'; return; }
+
+  const btn = $('cfg-save');
+  btn.textContent = 'Conectando…'; btn.disabled = true;
+
+  try {
+    const client = createClient(url, key);
+    const { error } = await client.from('ventas').select('id').limit(1);
+    if (error) throw error;
+    localStorage.setItem('sb_url', url);
+    localStorage.setItem('sb_key', key);
+    supabase = client;
+    showApp();
+    loadVentas();
+  } catch (e) {
+    errEl.textContent = 'No se pudo conectar. Verificá la URL y la clave.';
+    btn.textContent = 'Conectar'; btn.disabled = false;
+  }
+});
+
+$('btn-settings').addEventListener('click', () => {
+  if (!confirm('¿Cambiar las credenciales de Supabase?')) return;
+  localStorage.removeItem('sb_url'); localStorage.removeItem('sb_key');
+  $('cfg-url').value = ''; $('cfg-key').value = '';
+  showConfig();
+});
+
+// ── DATA ──────────────────────────────────────────────
+async function loadVentas() {
+  ventasList.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+  const { data, error } = await supabase
+    .from('ventas').select('*').order('fecha', { ascending: false, nullsFirst: false });
+  if (error) {
+    ventasList.innerHTML = `<p style="color:var(--danger);text-align:center;padding:24px">Error: ${esc(error.message)}</p>`;
+    return;
+  }
+  ventas = data || [];
+  render();
+}
+
+async function upsertVenta(payload) {
+  if (editingId) {
+    const { error } = await supabase.from('ventas').update(payload).eq('id', editingId);
+    if (error) throw error;
+  } else {
+    const { error } = await supabase.from('ventas').insert({ ...payload, id: crypto.randomUUID() });
+    if (error) throw error;
+  }
+  await loadVentas();
+}
+
+async function deleteVenta(id) {
+  const { error } = await supabase.from('ventas').delete().eq('id', id);
+  if (error) throw error;
+  await loadVentas();
+}
+
+async function cobrarCuota(id) {
+  const v = ventas.find(x => x.id === id);
+  if (!v || v.cuotas_cobradas >= v.num_cuotas) return;
+  const { error } = await supabase
+    .from('ventas').update({ cuotas_cobradas: v.cuotas_cobradas + 1 }).eq('id', id);
+  if (error) { toast('Error al cobrar cuota'); return; }
+  toast('✓ Cuota cobrada');
+  await loadVentas();
+}
+
+// ── RENDER ────────────────────────────────────────────
+function fmt(n) {
+  return new Intl.NumberFormat('es-AR', {
+    style: 'currency', currency: 'ARS', maximumFractionDigits: 0
+  }).format(n ?? 0);
+}
+
+function fmtDate(d) {
+  if (!d) return '';
+  return new Date(d).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
+
+function summary() {
+  let cobrado = 0, pendiente = 0;
+  for (const v of ventas) {
+    if (v.es_cuotas && v.num_cuotas > 0) {
+      const por = v.precio / v.num_cuotas;
+      cobrado  += por * (v.cuotas_cobradas || 0);
+      pendiente += por * (v.num_cuotas - (v.cuotas_cobradas || 0));
+    } else {
+      cobrado += v.precio || 0;
+    }
+  }
+  return { cobrado, pendiente };
+}
+
+function render() {
+  const { cobrado, pendiente } = summary();
+  $('sum-cobrado').textContent  = fmt(cobrado);
+  $('sum-pendiente').textContent = fmt(pendiente);
+  $('sum-items').textContent    = ventas.length;
+
+  if (!ventas.length) {
+    ventasList.innerHTML = `
+      <div class="empty">
+        <div class="icon">📦</div>
+        <p>Sin ventas todavía.<br>Tocá <strong>+</strong> para agregar una.</p>
+      </div>`;
+    return;
+  }
+
+  ventasList.innerHTML = ventas.map(v => {
+    const esCuotas = v.es_cuotas && v.num_cuotas > 0;
+    const cobradas = v.cuotas_cobradas || 0;
+    const total    = v.num_cuotas || 1;
+    const pct      = esCuotas ? Math.round((cobradas / total) * 100) : 100;
+    const completo = esCuotas && cobradas >= total;
+
+    let cuotasHtml = '';
+    if (esCuotas) {
+      const xCuota = fmt(v.precio / total);
+      cuotasHtml = `
+        <div class="cuotas-row">
+          <div class="cuotas-info">
+            <div class="cuotas-label">${cobradas}/${total} cuotas · ${xCuota} c/u</div>
+            <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+          </div>
+          <span class="badge ${completo ? 'badge-ok' : 'badge-cuotas'}">${completo ? '✓ Pagado' : `${pct}%`}</span>
+          ${!completo ? `<button class="btn btn-success btn-sm" onclick="window._cobrar('${v.id}')">+1 cuota</button>` : ''}
+        </div>`;
+    }
+
+    return `
+      <div class="venta-card">
+        <div class="venta-top">
+          <div class="venta-info">
+            <div class="venta-nombre">${esc(v.nombre || '—')}</div>
+            ${v.comprador ? `<div class="venta-comprador">👤 ${esc(v.comprador)}</div>` : ''}
+          </div>
+          <div class="venta-right">
+            <div class="venta-precio">${fmt(v.precio)}</div>
+            ${v.fecha ? `<div class="venta-fecha">${fmtDate(v.fecha)}</div>` : ''}
+          </div>
+        </div>
+        ${cuotasHtml}
+        <div class="venta-actions">
+          <button class="btn btn-outline btn-sm" onclick="window._edit('${v.id}')">✏️ Editar</button>
+          <button class="btn btn-danger btn-sm" onclick="window._del('${v.id}','${escAttr(v.nombre || '')}')">🗑️</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function escAttr(s) { return String(s).replace(/'/g,'&#39;'); }
+
+// Expose for inline handlers
+window._cobrar = cobrarCuota;
+window._edit   = id => openModal(id);
+window._del    = (id, nombre) => {
+  pendingDelete = id;
+  $('confirm-text').textContent = `¿Eliminás "${nombre}"? Esta acción no se puede deshacer.`;
+  confirmOverlay.classList.add('open');
+};
+
+// ── MODAL ─────────────────────────────────────────────
+function openModal(id = null) {
+  editingId = id;
+  const v = id ? ventas.find(x => x.id === id) : null;
+
+  $('modal-title').textContent = id ? 'Editar venta' : 'Nueva venta';
+  $('f-nombre').value           = v?.nombre || '';
+  $('f-comprador').value        = v?.comprador || '';
+  $('f-precio').value           = v?.precio ?? '';
+  $('f-fecha').value            = v?.fecha ? v.fecha.slice(0,10) : new Date().toISOString().slice(0,10);
+  $('f-es-cuotas').checked      = v?.es_cuotas || false;
+  $('f-num-cuotas').value       = v?.num_cuotas ?? '';
+  $('f-cuotas-cobradas').value  = v?.cuotas_cobradas ?? '';
+  setCuotasVisible(v?.es_cuotas || false);
+
+  modalOverlay.classList.add('open');
+  setTimeout(() => $('f-nombre').focus(), 50);
+}
+
+function closeModal() {
+  modalOverlay.classList.remove('open');
+  editingId = null;
+}
+
+function setCuotasVisible(show) {
+  $('cuotas-fields').classList.toggle('show', show);
+}
+
+$('f-es-cuotas').addEventListener('change', e => setCuotasVisible(e.target.checked));
+$('btn-add').addEventListener('click', () => openModal());
+$('modal-close').addEventListener('click', closeModal);
+$('btn-cancel').addEventListener('click', closeModal);
+modalOverlay.addEventListener('click', e => { if (e.target === modalOverlay) closeModal(); });
+
+$('btn-save').addEventListener('click', async () => {
+  const nombre   = $('f-nombre').value.trim();
+  const comprador = $('f-comprador').value.trim();
+  const precio   = parseFloat($('f-precio').value);
+  const fecha    = $('f-fecha').value || null;
+  const es_cuotas = $('f-es-cuotas').checked;
+  const num_cuotas = es_cuotas ? parseInt($('f-num-cuotas').value) : null;
+  const cuotas_cobradas = es_cuotas ? (parseInt($('f-cuotas-cobradas').value) || 0) : null;
+
+  if (!nombre) { toast('El nombre es obligatorio'); return; }
+  if (isNaN(precio) || precio < 0) { toast('Ingresá un precio válido'); return; }
+  if (es_cuotas && (!num_cuotas || num_cuotas < 1)) { toast('Indicá la cantidad de cuotas'); return; }
+  if (es_cuotas && cuotas_cobradas > num_cuotas) { toast('Las cuotas cobradas no pueden superar el total'); return; }
+
+  const btn = $('btn-save');
+  btn.textContent = 'Guardando…'; btn.disabled = true;
+  try {
+    await upsertVenta({ nombre, comprador: comprador || null, precio, fecha, es_cuotas, num_cuotas, cuotas_cobradas });
+    closeModal();
+    toast(editingId ? '✓ Venta actualizada' : '✓ Venta agregada');
+  } catch(e) {
+    toast('Error: ' + e.message);
+  } finally {
+    btn.textContent = 'Guardar'; btn.disabled = false;
+  }
+});
+
+// ── CONFIRM ───────────────────────────────────────────
+$('confirm-cancel').addEventListener('click', () => {
+  confirmOverlay.classList.remove('open');
+  pendingDelete = null;
+});
+
+$('confirm-ok').addEventListener('click', async () => {
+  confirmOverlay.classList.remove('open');
+  if (!pendingDelete) return;
+  try {
+    await deleteVenta(pendingDelete);
+    toast('Venta eliminada');
+  } catch(e) {
+    toast('Error al eliminar');
+  } finally {
+    pendingDelete = null;
+  }
+});
+
+// ── TOAST ─────────────────────────────────────────────
+let toastTimer;
+function toast(msg) {
+  toastEl.textContent = msg;
+  toastEl.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toastEl.classList.remove('show'), 2800);
+}
+
+init();
+</script>
+</body>
+</html>
